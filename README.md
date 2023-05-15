@@ -102,11 +102,17 @@
 *- 从 Gitee 调用数据
 copy "https://gitee.com/Shutter_Zor/Commonly-Used-Control-Variables/raw/main/ControlVarsDetail.dta" "ControlVarsDetail.dta"
 use "ControlVarsDetail.dta", clear
+  *- 或者
+  use "https://gitee.com/Shutter_Zor/Commonly-Used-Control-Variables/raw/main/ControlVarsDetail.dta"
 
 *- 从 GitHub 调用数据
 copy "https://github.com/ShutterZor/Commonly-Used-Control-Variables/raw/main/ControlVarsDetail.dta" "ControlVarsDetail.dta"
 use "ControlVarsDetail.dta", clear
+  *- 或者
+  use "https://github.com/ShutterZor/Commonly-Used-Control-Variables/raw/main/ControlVarsDetail.dta"
 ```
+
+如果出现`file not found`之类的错误，意味着网络连接不通畅等，可直接将连接复制到浏览器下载。建议开梯子用GitHub的方法下载。
 
 数据调用结果：
 
