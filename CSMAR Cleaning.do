@@ -1,11 +1,11 @@
 * =============================================================
 /* Author Information */
 
-* Name:				Shutter Zor（左祥太）
-* Email:			Shutter_Z@outlook.com
-* Affiliation:		School of Management, Xiamen University
-* Date:				2023/5/13
-* Version:			V1.0
+* Name:		Shutter Zor（左祥太）
+* Email:	Shutter_Z@outlook.com
+* Affiliation:	School of Management, Xiamen University
+* Date:		2023/5/13
+* Version:	V1.0
 
 * =============================================================
 
@@ -387,7 +387,7 @@ drop in 1/2
 			gen INDBOARD = IndependentDirectorNumber / DirectorNumber
 			
 			*- 保留有效变量
-			keep STKCD YEAR BOARD INDBOARD Holdshares
+			keep STKCD YEAR BOARD INDBOARD
 			
 			*- 补充变量标签
 			label var YEAR		"观测年份"
