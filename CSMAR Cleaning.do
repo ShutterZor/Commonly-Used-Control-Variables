@@ -387,7 +387,7 @@ drop in 1/2
 			gen INDBOARD = IndependentDirectorNumber / DirectorNumber
 			
 			*- 保留有效变量
-			keep STKCD YEAR BOARD INDBOARD
+			keep STKCD YEAR BOARD INDBOARD Holdshares
 			
 			*- 补充变量标签
 			label var YEAR		"观测年份"
