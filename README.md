@@ -192,11 +192,11 @@ use "ControlVarsDetail.dta", clear
 
 数据调用结果：
 
-![](Image/Figure1.png)
+![Image1](Image/Figure1.png)
 
 查看数据：
 
-![](Image/Figure2.png)
+![Image2](Image/Figure2.png)
 
 接下来只需要保存到本地就行，比如：`save controls.dta, replace`。
 
