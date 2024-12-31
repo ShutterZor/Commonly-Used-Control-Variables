@@ -1,0 +1,1491 @@
+{smcl}
+{com}{sf}{ul off}{txt}{.-}
+      name:  {res}ShutterZorADXMU20241231
+       {txt}log:  {res}F:\Doctor\GitHub Repos\Commonly-Used-Control-Variables\CSMAR CtrlVars Cleaning Log.smcl
+  {txt}log type:  {res}smcl
+ {txt}opened on:  {res}31 Dec 2024, 12:08:55
+{txt}
+{com}. * =============================================================
+. /* Author Information */
+. 
+. * Name:                 Shutter Zor（左祥太）
+. * Email:                Shutter_Z@outlook.com
+. * Affiliation:  Accounting Department, Xiamen University
+. * Date:                 2024/12/31
+. * Version:              V3.0
+. 
+. * =============================================================
+. 
+. 
+. 
+. /* 常用控制变量数据清洗教程（ControlVarsDetail.dta）*/ 
+. /* 说明：本次样本为所有上市公司2001-2023（含2001与2023）的数据 */
+. 
+. 
+. 
+. ********************************************************************************
+. // 开始时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:08:55
+{txt}
+{com}. 
+. *- 清洗上市公司基本信息数据
+. /* 包含变量：STKCD STKNM YEAR INDCD INDNM PROVCD PROVNM CITYCD CITYNM MARKET STATE AGE */
+. 
+. import excel using "DataA-Original/STK_LISTEDCOINFOANL.xlsx", first clear
+{res}{text}(16 vars, 62,358 obs)
+
+{com}. labone, nrow(1 2) concat("_")
+{txt}
+{com}. drop in 1/2
+{txt}(2 observations deleted)
+
+{com}.         
+.         *- 生成变量 - 观测年份
+.         gen YEAR = substr(EndDate,1,4)
+{txt}
+{com}.         destring YEAR, replace
+{txt}YEAR: all characters numeric; {res}replaced {txt}as {res}int
+{txt}
+{com}.         
+.         *- 生成变量 - 成立年份至观测年份的 AGE1
+.         gen EstablishYear = substr(EstablishDate,1,4)
+{txt}(10 missing values generated)
+
+{com}.         destring EstablishYear, replace
+{txt}EstablishYear: all characters numeric; {res}replaced {txt}as {res}int
+{txt}(10 missing values generated)
+{res}{txt}
+{com}.         gen AGE1 = YEAR - EstablishYear
+{txt}(10 missing values generated)
+
+{com}.         
+.         *- 生成变量 - 上市年份至观测年份的 AGE2
+.         gen ListingYear = substr(LISTINGDATE,1,4)
+{txt}
+{com}.         destring ListingYear, replace
+{txt}ListingYear: all characters numeric; {res}replaced {txt}as {res}int
+{txt}
+{com}.         gen AGE2 = YEAR - ListingYear
+{txt}
+{com}.         drop if AGE2 < 0                // 去掉部分不合理的观测样本
+{txt}(1,597 observations deleted)
+
+{com}.         
+.         *- 生成变量 - 股票市场板块 MARKET
+.         gen MARKET = "深证主板A股" if substr(Symbol,1,2) == "00"
+{txt}(37,132 missing values generated)
+
+{com}.         replace MARKET = "深证创业板" if substr(Symbol,1,2) == "30"
+{txt}(9,430 real changes made)
+
+{com}.         replace MARKET = "深证B股" if substr(Symbol,1,2) == "20"
+{txt}(262 real changes made)
+
+{com}.         replace MARKET = "上证主板A股" if substr(Symbol,1,2) == "60"
+{txt}(24,993 real changes made)
+
+{com}.         replace MARKET = "上证科创板" if substr(Symbol,1,2) == "68"
+{txt}(1,729 real changes made)
+
+{com}.         replace MARKET = "上证B股" if substr(Symbol,1,2) == "90"
+{txt}(194 real changes made)
+
+{com}.         replace MARKET = "北证A股" if substr(Symbol,1,2) == "43" | substr(Symbol,1,2) == "83" | substr(Symbol,1,2) == "87"
+{txt}(524 real changes made)
+
+{com}.         
+.         *- 重命名变量
+.         rename (Symbol ShortName IndustryName IndustryCode PROVINCECODE PROVINCE CITYCODE CITY LISTINGSTATE) (STKCD STKNM INDNM INDCD PROVCD PROVNM CITYCD CITYNM STATE)
+{res}{txt}
+{com}.         
+.         *- 保留有效变量
+.         keep STKCD STKNM YEAR INDCD INDNM PROVCD PROVNM CITYCD CITYNM MARKET STATE AGE1 AGE2 
+{txt}
+{com}.         
+.         *- 补充变量标签
+.         label var YEAR          "观测年份"
+{txt}
+{com}.         label var MARKET        "股票市场板块"
+{txt}
+{com}.         label var AGE1          "从成立年份到观测年份的年龄"
+{txt}
+{com}.         label var AGE2          "从上市年份到观测年份的年龄"
+{txt}
+{com}.         
+.         *- 排序与保存数据
+.         order STKCD STKNM YEAR INDCD INDNM PROVCD PROVNM CITYCD CITYNM MARKET STATE AGE1 AGE2 
+{txt}
+{com}.         label data "基本信息相关变量11+年龄 - From Shutter Zor"
+{txt}
+{com}.         save "DataB-Hub/Data1.dta", replace
+{txt}file DataB-Hub/Data1.dta saved
+
+{com}. 
+. /* 本部分生成的 Data1 用于后续合并 */
+. /* STKCD STKNM YEAR INDCD INDNM PROVCD PROVNM CITYCD CITYNM MARKET STATE AGE */
+. 
+. // 结束时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:09:07
+{txt}
+{com}. ********************************************************************************
+. 
+. 
+. 
+. ********************************************************************************
+. // 开始时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:09:07
+{txt}
+{com}. 
+. *- 清洗财务报表相关数据
+. /* 包含变量：CFO GROWTH LEV MFEE OCCUPY ROA ROE SIZE TAT */
+.         
+.         *- 资产负债表
+.         import excel using "DataA-Original/FS_Combas.xlsx", first clear
+{res}{text}(8 vars, 582,512 obs)
+
+{com}.         labone, nrow(1 2) concat("_")
+{txt}
+{com}.         drop in 1/2
+{txt}(2 observations deleted)
+
+{com}.                 
+.                 *- 仅保留合并报表数据
+.                 keep if Typrep == "A"           // A为合并报表，B为母公司报表
+{txt}(270,157 observations deleted)
+
+{com}.                 
+.                 *- 仅保留年报数据
+.                 keep if substr(Accper,6,2) == "12"                      // 12月的年报
+{txt}(247,234 observations deleted)
+
+{com}.                 
+.                 *- 重命名变量
+.                 rename (Stkcd ShortName A001121000 A001000000 A002000000 A003000000) (STKCD STKNM 其他应收款 总资产 总负债 所有者权益)
+{res}{txt}
+{com}.                 
+.                 *- 生成变量 - 观测年份
+.                 gen YEAR = real(substr(Accper,1,4))
+{txt}
+{com}.                 
+.                 *- 生成变量 - 资产负债率 LEV
+.                 destring 总负债 总资产, replace                   // 转为数值变量，方便计算
+{txt}总负债: all characters numeric; {res}replaced {txt}as {res}double
+{txt}总资产: all characters numeric; {res}replaced {txt}as {res}double
+{txt}
+{com}.                 gen LEV = 总负债 / 总资产
+{txt}(3 missing values generated)
+
+{com}. 
+.                 *- 生成变量 - 大股东资金占用 OCCUPY
+.                 destring 其他应收款, replace
+{txt}其他应收款: all characters numeric; {res}replaced {txt}as {res}double
+{txt}(831 missing values generated)
+{res}{txt}
+{com}.                 gen OCCUPY = 其他应收款 / 总资产
+{txt}(834 missing values generated)
+
+{com}. 
+.                 *- 生成变量 - 公司规模 SIZE
+.                 gen SIZE = ln(总资产)
+{txt}(3 missing values generated)
+
+{com}.                 
+.                 *- 保留有效变量
+.                 keep STKCD STKNM 总资产 所有者权益 YEAR LEV OCCUPY SIZE
+{txt}
+{com}.                 
+.                 *- 补充变量标签
+.                 label var YEAR          "观测年份"
+{txt}
+{com}.                 label var LEV           "资产负债率"
+{txt}
+{com}.                 label var OCCUPY        "大股东资金占用"
+{txt}
+{com}.                 label var SIZE          "公司规模"
+{txt}
+{com}.                 
+.                 *- 保存数据
+.                 label data "资产负债表数据 - From Shutter Zor"
+{txt}
+{com}.                 save "DataB-Hub/Data2.dta", replace
+{txt}file DataB-Hub/Data2.dta saved
+
+{com}.                 
+.         *- 利润表
+.         import excel using "DataA-Original/FS_Comins.xlsx", first clear
+{res}{text}(7 vars, 581,448 obs)
+
+{com}.         labone, nrow(1 2) concat("_")
+{txt}
+{com}.         drop in 1/2     
+{txt}(2 observations deleted)
+
+{com}.         
+.                 *- 仅保留合并报表数据
+.                 keep if Typrep == "A"           // A为合并报表，B为母公司报表
+{txt}(270,478 observations deleted)
+
+{com}.                 
+.                 *- 仅保留年报数据
+.                 keep if substr(Accper,6,2) == "12"                      // 12月的年报
+{txt}(246,348 observations deleted)
+
+{com}.                 
+.                 *- 重命名变量
+.                 rename (Stkcd ShortName B001101000 B001210000 B002000000) (STKCD STKNM 营业收入 管理费用 净利润)     
+{res}{txt}
+{com}.         
+.                 *- 生成变量 - 观测年份
+.                 gen YEAR = real(substr(Accper,1,4))     
+{txt}
+{com}.                 
+.                 *- 生成变量 - 营业收入增长率 GROWTH
+.                 destring 营业收入, replace
+{txt}营业收入: all characters numeric; {res}replaced {txt}as {res}double
+{txt}(1119 missing values generated)
+{res}{txt}
+{com}.                 egen STKID = group(STKCD)
+{txt}
+{com}.                 xtset STKID YEAR
+{res}{txt}{col 8}panel variable:  {res}STKID (unbalanced)
+{txt}{col 9}time variable:  {res}{col 25}YEAR, 2001 to 2023, but with a gap
+{txt}{col 17}delta:  {res}1 unit
+{txt}
+{com}.                 bys STKID: gen GROWTH = (营业收入 - L.营业收入) / L.营业收入
+{txt}(6,791 missing values generated)
+
+{com}.                 
+.                 *- 生成变量 - 管理层费用率 MFEE
+.                 destring 管理费用, replace
+{txt}管理费用: all characters numeric; {res}replaced {txt}as {res}double
+{txt}(888 missing values generated)
+{res}{txt}
+{com}.                 gen MFEE = 管理费用 / 营业收入
+{txt}(1,155 missing values generated)
+
+{com}.                 
+.                 *- 保留有效变量
+.                 keep STKCD STKNM YEAR 营业收入 净利润 GROWTH MFEE
+{txt}
+{com}.                 
+.                 *- 补充变量标签
+.                 label var YEAR          "观测年份"
+{txt}
+{com}.                 label var GROWTH        "营业收入增长率"
+{txt}
+{com}.                 label var MFEE          "管理层费用率"
+{txt}
+{com}. 
+.                 *- 保存数据
+.                 label data "利润表数据 - From Shutter Zor"
+{txt}
+{com}.                 save "DataB-Hub/Data3.dta", replace             
+{txt}file DataB-Hub/Data3.dta saved
+
+{com}.                 
+.         *- 现金流量表 - 直接法
+.         import excel using "DataA-Original/FS_Comscfd.xlsx", first clear
+{res}{text}(5 vars, 566,394 obs)
+
+{com}.         labone, nrow(1 2) concat("_")
+{txt}
+{com}.         drop in 1/2     
+{txt}(2 observations deleted)
+
+{com}.         
+.                 *- 仅保留合并报表数据
+.                 keep if Typrep == "A"           // A为合并报表，B为母公司报表
+{txt}(264,935 observations deleted)
+
+{com}.                 
+.                 *- 仅保留年报数据
+.                 keep if substr(Accper,6,2) == "12"                      // 12月的年报       
+{txt}(236,341 observations deleted)
+
+{com}.         
+.                 *- 重命名变量
+.                 rename (Stkcd ShortName C001000000) (STKCD STKNM 经营活动产生的现金流净额直接法)
+{res}{txt}
+{com}.                 
+.                 *- 生成变量 - 观测年份
+.                 gen YEAR = real(substr(Accper,1,4))
+{txt}
+{com}.                 
+.                 *- 保留有效变量
+.                 keep STKCD STKNM YEAR 经营活动产生的现金流净额直接法
+{txt}
+{com}.                 
+.                 *- 补充变量标签 
+.                 label var YEAR          "观测年份"
+{txt}
+{com}.                 
+.                 *- 保存数据
+.                 label data "现金流量表数据直接法 - From Shutter Zor"
+{txt}
+{com}.                 save "DataB-Hub/Data4.dta", replace                     
+{txt}file DataB-Hub/Data4.dta saved
+
+{com}.                 
+.         *- 现金流量表 - 间接法
+.         import excel using "DataA-Original/FS_Comscfi.xlsx", first clear
+{res}{text}(5 vars, 286,924 obs)
+
+{com}.         labone, nrow(1 2) concat("_")
+{txt}
+{com}.         drop in 1/2     
+{txt}(2 observations deleted)
+
+{com}.         
+.                 *- 仅保留合并报表数据
+.                 keep if Typrep == "A"           // A为合并报表，B为母公司报表
+{txt}(91,342 observations deleted)
+
+{com}.                 
+.                 *- 仅保留年报数据
+.                 keep if substr(Accper,6,2) == "12"                      // 12月的年报       
+{txt}(130,521 observations deleted)
+
+{com}.         
+.                 *- 重命名变量
+.                 rename (Stkcd ShortName D000100000) (STKCD STKNM 经营活动产生的现金流净额间接法)
+{res}{txt}
+{com}.                 
+.                 *- 生成变量 - 观测年份
+.                 gen YEAR = real(substr(Accper,1,4))
+{txt}
+{com}.                 
+.                 *- 保留有效变量
+.                 keep STKCD STKNM YEAR 经营活动产生的现金流净额间接法
+{txt}
+{com}.                 
+.                 *- 补充变量标签 
+.                 label var YEAR          "观测年份"
+{txt}
+{com}.                 
+.                 *- 保存数据
+.                 label data "现金流量表数据间接法 - From Shutter Zor"
+{txt}
+{com}.                 save "DataB-Hub/Data5.dta", replace             
+{txt}file DataB-Hub/Data5.dta saved
+
+{com}.                 
+.         *- 合并资产负债表、利润表、现金流量表数据，并计算相关变量
+.         // 2024/12/31 开始，取消 “仅保留合并上的结果，即取消 keep if _merge == 3”
+.         use "DataB-Hub/Data2.dta", clear
+{txt}(资产负债表数据 - From Shutter Zor)
+
+{com}.         
+.                 *- 合并利润表
+.                 merge 1:1 STKCD YEAR using "DataB-Hub/Data3.dta"
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}             499
+{txt}{col 9}from master{col 30}{res}             499{txt}  (_merge==1)
+{col 9}from using{col 30}{res}               0{txt}  (_merge==2)
+
+{col 5}matched{col 30}{res}          64,620{txt}  (_merge==3)
+{col 5}{hline 41}
+
+{com}.                 drop _merge
+{txt}
+{com}.         
+.                 *- 合并现金流量表直接法
+.                 merge 1:1 STKCD YEAR using "DataB-Hub/Data4.dta"
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}               3
+{txt}{col 9}from master{col 30}{res}               3{txt}  (_merge==1)
+{col 9}from using{col 30}{res}               0{txt}  (_merge==2)
+
+{col 5}matched{col 30}{res}          65,116{txt}  (_merge==3)
+{col 5}{hline 41}
+
+{com}.                 drop _merge
+{txt}
+{com}.                 
+.                 *- 合并现金流量表间接法
+.                 merge 1:1 STKCD YEAR using "DataB-Hub/Data5.dta"
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}              64
+{txt}{col 9}from master{col 30}{res}              62{txt}  (_merge==1)
+{col 9}from using{col 30}{res}               2{txt}  (_merge==2)
+
+{col 5}matched{col 30}{res}          65,057{txt}  (_merge==3)
+{col 5}{hline 41}
+
+{com}.                 drop _merge             
+{txt}
+{com}.         
+.                 *- 生成变量 - 现金流状况 CFO
+.                 destring 经营活动产生的现金流净额直接法 经营活动产生的现金流净额间接法, replace
+{txt}经营活动产生的现金流净额直接法: all characters numeric; {res}replaced {txt}as {res}double
+{txt}(5 missing values generated)
+{res}{txt}经营活动产生的现金流净额间接法: all characters numeric; {res}replaced {txt}as {res}double
+{txt}(63 missing values generated)
+{res}{txt}
+{com}.                 gen CFO1 = 经营活动产生的现金流净额直接法 / 总资产
+{txt}(8 missing values generated)
+
+{com}.                 gen CFO2 = 经营活动产生的现金流净额间接法 / 总资产
+{txt}(68 missing values generated)
+
+{com}.         
+.                 *- 生成变量 - 总资产收益率 ROA
+.                 destring 净利润, replace
+{txt}净利润: all characters numeric; {res}replaced {txt}as {res}double
+{txt}(501 missing values generated)
+{res}{txt}
+{com}.                 gen ROA = 净利润 / 总资产
+{txt}(504 missing values generated)
+
+{com}.                 
+.                 *- 生成变量 - 净资产收益率 ROE
+.                 destring 所有者权益, replace
+{txt}所有者权益: all characters numeric; {res}replaced {txt}as {res}double
+{txt}(2 missing values generated)
+{res}{txt}
+{com}.                 gen ROE = 净利润 / 所有者权益
+{txt}(506 missing values generated)
+
+{com}.                 
+.                 *- 生成变量 - 总资产周转率 TAT
+.                 gen TAT = 营业收入 / 总资产
+{txt}(1,623 missing values generated)
+
+{com}.                 
+.                 *- 保留有效变量
+.                 keep STKCD STKNM YEAR CFO1 CFO2 GROWTH LEV MFEE OCCUPY ROA ROE SIZE TAT
+{txt}
+{com}.                 
+.                 *- 补充变量标签
+.                 label var CFO1          "现金流状况-直接法"
+{txt}
+{com}.                 label var CFO2          "现金流状况-间接法"
+{txt}
+{com}.                 label var ROA           "总资产收益率"
+{txt}
+{com}.                 label var ROE           "净资产收益率"
+{txt}
+{com}.                 label var TAT           "总资产周转率"
+{txt}
+{com}.                 
+.                 *- 排序与保存数据
+.                 order STKCD STKNM YEAR CFO1 CFO2 GROWTH LEV MFEE OCCUPY ROA ROE SIZE TAT
+{txt}
+{com}.                 label data "财务报表相关变量9类10个 - From Shutter Zor"
+{txt}
+{com}.                 save "DataB-Hub/Data6.dta", replace     
+{txt}file DataB-Hub/Data6.dta saved
+
+{com}. 
+. /* 本部分生成的 Data6 用于后续合并 */
+. /* CFO GROWTH LEV MFEE OCCUPY ROA ROE SIZE TAT */
+. 
+. // 结束时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:10:53
+{txt}
+{com}. ********************************************************************************
+. 
+. 
+. 
+. ********************************************************************************
+. // 开始时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:10:53
+{txt}
+{com}. 
+. *- 清洗治理结构相关数据
+. /* 包含变量：BALANCE BOARD INDBOARD MHOLD TOP1 DUAL */
+.         
+.         *- 股东股本相关数据
+.         /* 包含变量：BALANCE TOP1 */
+.         
+.                 *- 股东股本相关数据 - 1
+.                 import excel using "DataA-Original/HLD_Shareholders.xlsx", first clear
+{res}{text}(5 vars, 1,000,002 obs)
+
+{com}.                 labone, nrow(1 2) concat("_")
+{txt}
+{com}.                 drop in 1/2
+{txt}(2 observations deleted)
+
+{com}.         
+.                         *- 仅保留年报数据
+.                         keep if substr(Reptdt,6,2) == "12"
+{txt}(716,644 observations deleted)
+
+{com}.                         
+.                         *- 重命名变量
+.                         rename Stkcd STKCD
+{res}{txt}
+{com}.                         
+.                         *- 生成变量 - 观测年份
+.                         gen YEAR = real(substr(Reptdt,1,4))
+{txt}
+{com}.                         
+.                         *- 生成变量 - 第一大股东持股数量 TOP1
+.                         destring S0304a, replace
+{txt}S0304a: all characters numeric; {res}replaced {txt}as {res}double
+{txt}
+{com}.                         bys STKCD YEAR: egen TOP1 = max(S0304a)
+{txt}
+{com}.                         
+.                         *- 生成变量 - 股权制衡度 BALANCE
+.                         bys STKCD YEAR: egen TOP2_5 = sum(S0304a) if S0306a=="2" | S0306a=="3" | S0306a=="4" | S0306a=="5"                      // 生成第二到第五大股东持股比例之和
+{txt}(170440 missing values generated)
+
+{com}.                         gen BALANCE = TOP2_5 / TOP1
+{txt}(170,440 missing values generated)
+
+{com}.                         
+.                         *- 保留有效样本
+.                         destring S0306a, replace
+{txt}S0306a: all characters numeric; {res}replaced {txt}as {res}byte
+{txt}
+{com}.                         drop if S0306a > 5
+{txt}(142,201 observations deleted)
+
+{com}.                         drop if TOP2_5 == .
+{txt}(28,239 observations deleted)
+
+{com}.                         duplicates drop STKCD YEAR, force
+
+{p 0 4}{txt}Duplicates in terms of {res} STKCD YEAR{p_end}
+
+{txt}(84,678 observations deleted)
+
+{com}.                         
+.                         *- 保留有效变量
+.                         keep STKCD YEAR BALANCE TOP1
+{txt}
+{com}.                         
+.                         *- 补充变量标签
+.                         label var YEAR          "观测年份"
+{txt}
+{com}.                         label var TOP1          "第一大股东持股数量"
+{txt}
+{com}.                         label var BALANCE       "股权制衡度"               
+{txt}
+{com}.                         
+.                         *- 排序与保存数据
+.                         order STKCD YEAR BALANCE TOP1
+{txt}
+{com}.                         label data "股东股本相关数据-1 - From Shutter Zor"
+{txt}
+{com}.                         save "DataB-Hub/Data7-1.dta", replace   
+{txt}(note: file DataB-Hub/Data7-1.dta not found)
+file DataB-Hub/Data7-1.dta saved
+
+{com}.                 
+.                 *- 股东股本相关数据 - 2
+.                 import excel using "DataA-Original/HLD_Shareholders1.xlsx", first clear
+{res}{text}(5 vars, 1,000,002 obs)
+
+{com}.                 labone, nrow(1 2) concat("_")
+{txt}
+{com}.                 drop in 1/2
+{txt}(2 observations deleted)
+
+{com}.         
+.                         *- 仅保留年报数据
+.                         keep if substr(Reptdt,6,2) == "12"
+{txt}(716,292 observations deleted)
+
+{com}.                         
+.                         *- 重命名变量
+.                         rename Stkcd STKCD
+{res}{txt}
+{com}.                         
+.                         *- 生成变量 - 观测年份
+.                         gen YEAR = real(substr(Reptdt,1,4))
+{txt}
+{com}.                         
+.                         *- 生成变量 - 第一大股东持股数量 TOP1
+.                         destring S0304a, replace
+{txt}S0304a: all characters numeric; {res}replaced {txt}as {res}double
+{txt}
+{com}.                         bys STKCD YEAR: egen TOP1 = max(S0304a)
+{txt}
+{com}.                         
+.                         *- 生成变量 - 股权制衡度 BALANCE
+.                         bys STKCD YEAR: egen TOP2_5 = sum(S0304a) if S0306a=="2" | S0306a=="3" | S0306a=="4" | S0306a=="5"                      // 生成第二到第五大股东持股比例之和
+{txt}(171079 missing values generated)
+
+{com}.                         gen BALANCE = TOP2_5 / TOP1
+{txt}(171,079 missing values generated)
+
+{com}.                         
+.                         *- 保留有效样本
+.                         destring S0306a, replace
+{txt}S0306a: all characters numeric; {res}replaced {txt}as {res}byte
+{txt}
+{com}.                         drop if S0306a > 5
+{txt}(142,907 observations deleted)
+
+{com}.                         drop if TOP2_5 == .
+{txt}(28,172 observations deleted)
+
+{com}.                         duplicates drop STKCD YEAR, force
+
+{p 0 4}{txt}Duplicates in terms of {res} STKCD YEAR{p_end}
+
+{txt}(84,458 observations deleted)
+
+{com}.                         
+.                         *- 保留有效变量
+.                         keep STKCD YEAR BALANCE TOP1
+{txt}
+{com}.                         
+.                         *- 补充变量标签
+.                         label var YEAR          "观测年份"
+{txt}
+{com}.                         label var TOP1          "第一大股东持股数量"
+{txt}
+{com}.                         label var BALANCE       "股权制衡度"               
+{txt}
+{com}.                         
+.                         *- 排序与保存数据
+.                         order STKCD YEAR BALANCE TOP1
+{txt}
+{com}.                         label data "股东股本相关数据-2 - From Shutter Zor"
+{txt}
+{com}.                         save "DataB-Hub/Data7-2.dta", replace   
+{txt}(note: file DataB-Hub/Data7-2.dta not found)
+file DataB-Hub/Data7-2.dta saved
+
+{com}.                 
+.                 *- 股东股本相关数据 - 3
+.                 import excel using "DataA-Original/HLD_Shareholders2.xlsx", first clear
+{res}{text}(5 vars, 114,565 obs)
+
+{com}.                 labone, nrow(1 2) concat("_")
+{txt}
+{com}.                 drop in 1/2
+{txt}(2 observations deleted)
+
+{com}.         
+.                         *- 仅保留年报数据
+.                         keep if substr(Reptdt,6,2) == "12"
+{txt}(87,657 observations deleted)
+
+{com}.                         
+.                         *- 重命名变量
+.                         rename Stkcd STKCD
+{res}{txt}
+{com}.                         
+.                         *- 生成变量 - 观测年份
+.                         gen YEAR = real(substr(Reptdt,1,4))
+{txt}
+{com}.                         
+.                         *- 生成变量 - 第一大股东持股数量 TOP1
+.                         destring S0304a, replace
+{txt}S0304a: all characters numeric; {res}replaced {txt}as {res}double
+{txt}
+{com}.                         bys STKCD YEAR: egen TOP1 = max(S0304a)
+{txt}
+{com}.                         
+.                         *- 生成变量 - 股权制衡度 BALANCE
+.                         bys STKCD YEAR: egen TOP2_5 = sum(S0304a) if S0306a=="2" | S0306a=="3" | S0306a=="4" | S0306a=="5"                      // 生成第二到第五大股东持股比例之和
+{txt}(16171 missing values generated)
+
+{com}.                         gen BALANCE = TOP2_5 / TOP1
+{txt}(16,171 missing values generated)
+
+{com}.                         
+.                         *- 保留有效样本
+.                         destring S0306a, replace
+{txt}S0306a: all characters numeric; {res}replaced {txt}as {res}byte
+{txt}
+{com}.                         drop if S0306a > 5
+{txt}(13,484 observations deleted)
+
+{com}.                         drop if TOP2_5 == .
+{txt}(2,687 observations deleted)
+
+{com}.                         duplicates drop STKCD YEAR, force
+
+{p 0 4}{txt}Duplicates in terms of {res} STKCD YEAR{p_end}
+
+{txt}(8,050 observations deleted)
+
+{com}.                         
+.                         *- 保留有效变量
+.                         keep STKCD YEAR BALANCE TOP1
+{txt}
+{com}.                         
+.                         *- 补充变量标签
+.                         label var YEAR          "观测年份"
+{txt}
+{com}.                         label var TOP1          "第一大股东持股数量"
+{txt}
+{com}.                         label var BALANCE       "股权制衡度"               
+{txt}
+{com}.                         
+.                         *- 排序与保存数据
+.                         order STKCD YEAR BALANCE TOP1
+{txt}
+{com}.                         label data "股东股本相关数据-3 - From Shutter Zor"
+{txt}
+{com}.                         save "DataB-Hub/Data7-3.dta", replace
+{txt}file DataB-Hub/Data7-3.dta saved
+
+{com}. 
+.                 *- 合并股东股本相关数据
+.                 use "DataB-Hub/Data7-1.dta", clear
+{txt}(股东股本相关数据-1 - From Shutter Zor)
+
+{com}.                 append using "DataB-Hub/Data7-2.dta"
+{txt}
+{com}.                 append using "DataB-Hub/Data7-3.dta"
+{txt}
+{com}.                 label data "股东股本相关数据 - From Shutter Zor"
+{txt}
+{com}.                 save "DataB-Hub/Data7.dta", replace     
+{txt}file DataB-Hub/Data7.dta saved
+
+{com}.                 erase "DataB-Hub/Data7-1.dta"
+{txt}
+{com}.                 erase "DataB-Hub/Data7-2.dta"
+{txt}
+{com}.                 
+.         *- 高管动态相关数据
+.         /* 包含变量：BOARD INDBOARD MHOLD */       
+.         
+.                 *- 高管动态数据
+.                 import excel using "DataA-Original/CG_ManagerShareSalary.xlsx", first clear
+{res}{text}(6 vars, 122,980 obs)
+
+{com}.                 labone, nrow(1 2) concat("_")
+{txt}
+{com}.                 drop in 1/2             
+{txt}(2 observations deleted)
+
+{com}.                 
+.                         *- 仅保留年末在职人员样本
+.                         keep if StatisticalCaliber == "1"
+{txt}(61,491 observations deleted)
+
+{com}.                         
+.                         *- 重命名变量
+.                         rename Symbol STKCD
+{res}{txt}
+{com}.                         
+.                         *- 生成变量 - 观测年份 YEAR
+.                         gen YEAR = real(substr(Enddate,1,4))
+{txt}
+{com}.                         
+.                         *- 生成变量 - 董事规模 BOARD
+.                         destring DirectorNumber, replace
+{txt}DirectorNumber: all characters numeric; {res}replaced {txt}as {res}byte
+{txt}
+{com}.                         gen BOARD = ln(DirectorNumber) 
+{txt}(31 missing values generated)
+
+{com}.                         
+.                         *- 生成变量 - 独立董事占比 INDBOARD
+.                         destring IndependentDirectorNumber, replace
+{txt}IndependentDirectorNumber: all characters numeric; {res}replaced {txt}as {res}byte
+{txt}
+{com}.                         gen INDBOARD = IndependentDirectorNumber / DirectorNumber
+{txt}(31 missing values generated)
+
+{com}.                         
+.                         *- 管理层持股数量
+.                         destring Holdshares, replace
+{txt}Holdshares: all characters numeric; {res}replaced {txt}as {res}double
+{txt}(2028 missing values generated)
+{res}{txt}
+{com}.                         
+.                         *- 保留有效变量
+.                         keep STKCD YEAR BOARD INDBOARD Holdshares
+{txt}
+{com}.                         
+.                         *- 补充变量标签
+.                         label var YEAR          "观测年份"
+{txt}
+{com}.                         label var BOARD         "董事规模"
+{txt}
+{com}.                         label var INDBOARD      "独立董事占比"
+{txt}
+{com}. 
+.                         *- 保存数据
+.                         label data "高管动态相关数据-1 - From Shutter Zor"
+{txt}
+{com}.                         save "DataB-Hub/Data8-1.dta", replace
+{txt}(note: file DataB-Hub/Data8-1.dta not found)
+file DataB-Hub/Data8-1.dta saved
+
+{com}.                 
+.                 *- 股本结构文件
+.                 import excel using "DataA-Original/CG_Capchg.xlsx", first clear
+{res}{text}(3 vars, 61,494 obs)
+
+{com}.                 labone, nrow(1 2) concat("_")
+{txt}
+{com}.                 drop in 1/2             
+{txt}(2 observations deleted)
+
+{com}.                         
+.                         *- 重命名变量
+.                         rename Stkcd STKCD
+{res}{txt}
+{com}.         
+.                         *- 生成变量 - 观测年份 YEAR
+.                         gen YEAR = real(substr(Reptdt,1,4))
+{txt}
+{com}.                         
+.                         *- 补充变量标签
+.                         label var YEAR          "观测年份"                  
+{txt}
+{com}.                         
+.                         *- 保留有效变量
+.                         keep STKCD YEAR Nshrttl
+{txt}
+{com}.                         
+.                         *- 保存数据
+.                         label data "高管动态相关数据-2 - From Shutter Zor"
+{txt}
+{com}.                         save "DataB-Hub/Data8-2.dta", replace                   
+{txt}(note: file DataB-Hub/Data8-2.dta not found)
+file DataB-Hub/Data8-2.dta saved
+
+{com}.         
+.                 *- 合并高管动态与股本结构，主要是计算MHOLD
+.                 // 2024/12/31 开始，取消 “仅保留合并上的结果，即取消 keep if _merge == 3”
+.                 use "DataB-Hub/Data8-1.dta", clear
+{txt}(高管动态相关数据-1 - From Shutter Zor)
+
+{com}.                 merge 1:1 STKCD YEAR using "DataB-Hub/Data8-2.dta"
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}               5
+{txt}{col 9}from master{col 30}{res}               0{txt}  (_merge==1)
+{col 9}from using{col 30}{res}               5{txt}  (_merge==2)
+
+{col 5}matched{col 30}{res}          61,487{txt}  (_merge==3)
+{col 5}{hline 41}
+
+{com}.                 drop _merge
+{txt}
+{com}.                 
+.                         *- 生成变量 - 管理层持股比例 MHOLD
+.                         destring Nshrttl, replace
+{txt}Nshrttl: all characters numeric; {res}replaced {txt}as {res}double
+{txt}
+{com}.                         gen MHOLD = Holdshares / Nshrttl
+{txt}(2,033 missing values generated)
+
+{com}.                         
+.                         *- 保留有效变量
+.                         keep STKCD YEAR BOARD INDBOARD MHOLD
+{txt}
+{com}.                         
+.                         *- 补充变量标签
+.                         label var MHOLD         "管理层持股比例"
+{txt}
+{com}.                         
+.                         *- 排序与保存数据
+.                         order STKCD YEAR BOARD INDBOARD MHOLD
+{txt}
+{com}.                         label data "高管动态与股本结构相关数据 - From Shutter Zor"
+{txt}
+{com}.                         save "DataB-Hub/Data8.dta", replace     
+{txt}file DataB-Hub/Data8.dta saved
+
+{com}.                         erase "DataB-Hub/Data8-1.dta"
+{txt}
+{com}.                         erase "DataB-Hub/Data8-2.dta"
+{txt}
+{com}.         
+.         *- 高管人数、持股相关数据
+.         /* 包含变量：DUAL */       
+.         import excel using "DataA-Original/CG_Ybasic.xlsx", first clear
+{res}{text}(3 vars, 61,493 obs)
+
+{com}.         labone, nrow(1 2) concat("_")
+{txt}
+{com}.         drop in 1/2
+{txt}(2 observations deleted)
+
+{com}.                 
+.                 *- 重命名变量
+.                 rename Stkcd STKCD 
+{res}{txt}
+{com}.                 
+.                 *- 生成变量 - 观测年份 YEAR
+.                 gen YEAR = real(substr(Reptdt,1,4))
+{txt}
+{com}.                 
+.                 *- 生成变量 - 两职合一 DUAL
+.                 destring Y1001b, replace
+{txt}Y1001b: all characters numeric; {res}replaced {txt}as {res}byte
+{txt}(1714 missing values generated)
+{res}{txt}
+{com}.                 rename Y1001b DUAL
+{res}{txt}
+{com}.                 replace DUAL = 0 if DUAL == 2
+{txt}(43,579 real changes made)
+
+{com}.         
+.                 *- 保留有效变量
+.                 keep STKCD YEAR DUAL
+{txt}
+{com}.                 
+.                 *- 补充变量标签
+.                 label var YEAR          "观测年份"
+{txt}
+{com}.                 label var DUAL          "两职合一"
+{txt}
+{com}.         
+.                 *- 保存数据
+.                 label data "高管人数、持股相关数据 - From Shutter Zor"
+{txt}
+{com}.                 save "DataB-Hub/Data9.dta", replace     
+{txt}file DataB-Hub/Data9.dta saved
+
+{com}.         
+.         *- 合并治理结构相关数据
+.         // 2024/12/31 开始，取消 “仅保留合并上的结果，即取消 keep if _merge == 3”
+.         use "DataB-Hub/Data7.dta", clear
+{txt}(股东股本相关数据 - From Shutter Zor)
+
+{com}.         merge 1:1 STKCD YEAR using "DataB-Hub/Data8.dta"
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}           2,404
+{txt}{col 9}from master{col 30}{res}               3{txt}  (_merge==1)
+{col 9}from using{col 30}{res}           2,401{txt}  (_merge==2)
+
+{col 5}matched{col 30}{res}          59,091{txt}  (_merge==3)
+{col 5}{hline 41}
+
+{com}.         drop _merge
+{txt}
+{com}.         merge 1:1 STKCD YEAR using "DataB-Hub/Data9.dta"
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}               4
+{txt}{col 9}from master{col 30}{res}               4{txt}  (_merge==1)
+{col 9}from using{col 30}{res}               0{txt}  (_merge==2)
+
+{col 5}matched{col 30}{res}          61,491{txt}  (_merge==3)
+{col 5}{hline 41}
+
+{com}.         drop _merge     
+{txt}
+{com}.         
+.                 *- 排序与保存数据
+.                 order STKCD YEAR BALANCE BOARD INDBOARD MHOLD TOP1 DUAL
+{txt}
+{com}.                 label data "治理结构相关变量6个 - From Shutter Zor"
+{txt}
+{com}.                 save "DataB-Hub/Data10.dta", replace    
+{txt}file DataB-Hub/Data10.dta saved
+
+{com}. 
+. /* 本部分生成的 Data10 用于后续合并 */
+. /* BALANCE BOARD INDBOARD MHOLD TOP1 DUAL */
+. 
+. // 结束时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:12:32
+{txt}
+{com}. ********************************************************************************        
+.         
+.         
+.         
+. ********************************************************************************
+. // 开始时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:12:32
+{txt}
+{com}. 
+. *- 清洗财务指标分析相关数据
+. /* 包含变量：BM TobinQ */
+. 
+. import excel using "DataA-Original/FI_T10.xlsx", first clear
+{res}{text}(9 vars, 228,927 obs)
+
+{com}. labone, nrow(1 2) concat("_")
+{txt}
+{com}. drop in 1/2
+{txt}(2 observations deleted)
+
+{com}.         
+.         *- 仅保留年报数据
+.         keep if substr(Accper,6,2) == "12"
+{txt}(169,237 observations deleted)
+
+{com}. 
+.         *- 重命名变量
+.         rename (Stkcd ShortName F100901A F100902A F100903A F100904A F101001A F101002A) (STKCD STKNM TobinQ1 TobinQ2 TobinQ3 TobinQ4 BM1 BM2)
+{res}{txt}
+{com}. 
+.         *- 生成变量 - 观测年份 YEAR
+.         gen YEAR = real(substr(Accper,1,4))
+{txt}
+{com}. 
+.         *- 生成变量 - 账面市值比 BM 与 托宾Q值 TobinQ 
+.         destring BM* TobinQ*, replace
+{txt}BM1: all characters numeric; {res}replaced {txt}as {res}double
+{txt}BM2: all characters numeric; {res}replaced {txt}as {res}double
+{txt}TobinQ1: all characters numeric; {res}replaced {txt}as {res}double
+{txt}TobinQ2: all characters numeric; {res}replaced {txt}as {res}double
+{txt}TobinQ3: all characters numeric; {res}replaced {txt}as {res}double
+{txt}TobinQ4: all characters numeric; {res}replaced {txt}as {res}double
+{txt}
+{com}.         
+.         *- 保留有效变量
+.         keep STKCD YEAR BM* TobinQ*
+{txt}
+{com}. 
+.         *- 补充变量标签
+.         label var YEAR          "观测年份"
+{txt}
+{com}. 
+.         *- 保存数据
+.         label data "财务指标分析相关变量2个"
+{txt}
+{com}.         save "DataB-Hub/Data11.dta", replace    
+{txt}file DataB-Hub/Data11.dta saved
+
+{com}. 
+. /* 本部分生成的 Data11 用于后续合并 */
+. /* BM TobinQ */
+. 
+. // 结束时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:12:48
+{txt}
+{com}. ********************************************************************************
+.         
+.         
+.         
+. ********************************************************************************
+. // 开始时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:12:48
+{txt}
+{com}. 
+. *- 清洗机构投资者相关数据
+. /* 包含变量：INSTITUTION */
+. 
+. import excel using "DataA-Original/INI_HolderSystematics.xlsx", first clear
+{res}{text}(4 vars, 226,092 obs)
+
+{com}. labone, nrow(1 2) concat("_")
+{txt}
+{com}. drop in 1/2
+{txt}(2 observations deleted)
+
+{com}.         
+.         *- 仅保留年报数据
+.         keep if substr(EndDate,6,2) == "12"
+{txt}(165,609 observations deleted)
+
+{com}. 
+.         *- 重命名变量
+.         rename (Symbol InsInvestorProp InsInvestorProp1) (STKCD INSTITUTION1 INSTITUTION2)
+{res}{txt}
+{com}. 
+.         *- 生成变量 - 观测年份 YEAR
+.         gen YEAR = real(substr(EndDate,1,4))
+{txt}
+{com}. 
+.         *- 生成变量 - 机构投资者比例 INSTITUTION
+.         destring INSTITUTION*, replace
+{txt}INSTITUTION1: all characters numeric; {res}replaced {txt}as {res}double
+{txt}INSTITUTION2: all characters numeric; {res}replaced {txt}as {res}double
+{txt}(411 missing values generated)
+{res}{txt}
+{com}.         
+.         *- 保留有效变量
+.         keep STKCD YEAR INSTITUTION*
+{txt}
+{com}. 
+.         *- 补充变量标签
+.         label var YEAR          "观测年份"
+{txt}
+{com}. 
+.         *- 保存数据
+.         label data "机构投资者相关变量1个"
+{txt}
+{com}.         save "DataB-Hub/Data12.dta", replace    
+{txt}file DataB-Hub/Data12.dta saved
+
+{com}. 
+. /* 本部分生成的 Data12 用于后续合并 */
+. /* INSTITUTION */
+. 
+. // 结束时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:12:55
+{txt}
+{com}. ********************************************************************************
+.         
+.         
+.         
+. ********************************************************************************
+. // 开始时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:12:55
+{txt}
+{com}. 
+. *- 清洗分析师预测相关数据
+. /* 包含变量：AUDIT */
+. 
+. import excel using "DataA-Original/AF_CFEATUREPROFILE.xlsx", first clear
+{res}{text}(4 vars, 61,048 obs)
+
+{com}. labone, nrow(1 2) concat("_")
+{txt}
+{com}. drop in 1/2
+{txt}(2 observations deleted)
+
+{com}.         
+.         *- 仅保留年报数据
+.         keep if substr(Accper,6,2) == "12"
+{txt}(0 observations deleted)
+
+{com}. 
+.         *- 重命名变量
+.         rename (Stknmec Stkcd) (STKNM STKCD)
+{res}{txt}
+{com}. 
+.         *- 生成变量 - 观测年份 YEAR
+.         gen YEAR = real(substr(Accper,1,4))
+{txt}
+{com}. 
+.         *- 生成变量 - 是否由四大会计师事务所审计 AUDIT
+.         gen AUDIT = 1 if Big4 == "Y"
+{txt}(56,865 missing values generated)
+
+{com}.         replace AUDIT = 0 if Big4 == "N"
+{txt}(56,510 real changes made)
+
+{com}.         
+.         *- 保留有效变量
+.         keep STKCD YEAR AUDIT
+{txt}
+{com}. 
+.         *- 补充变量标签
+.         label var YEAR          "观测年份"
+{txt}
+{com}.         label var AUDIT         "是否由四大会计师事务所审计"
+{txt}
+{com}.         
+.         *- 保存数据
+.         duplicates drop STKCD YEAR, force
+
+{p 0 4}{txt}Duplicates in terms of {res} STKCD YEAR{p_end}
+
+{txt}(1 observation deleted)
+
+{com}.         label data "分析师预测相关变量1个"
+{txt}
+{com}.         save "DataB-Hub/Data13.dta", replace    
+{txt}file DataB-Hub/Data13.dta saved
+
+{com}. 
+. /* 本部分生成的 Data13 用于后续合并 */
+. /* AUDIT */
+. 
+. // 结束时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:12:57
+{txt}
+{com}. ********************************************************************************
+.         
+.         
+.         
+. ********************************************************************************
+. // 开始时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:12:57
+{txt}
+{com}. 
+. *- 清洗财务报告审计意见相关数据
+. /* 包含变量：OPINION */
+. 
+. import excel using "DataA-Original/FIN_Audit.xlsx", first clear
+{res}{text}(4 vars, 63,201 obs)
+
+{com}. labone, nrow(1 2) concat("_")
+{txt}
+{com}. drop in 1/2
+{txt}(2 observations deleted)
+
+{com}.         
+.         *- 仅保留年报数据
+.         keep if substr(Accper,6,2) == "12"
+{txt}(1,700 observations deleted)
+
+{com}. 
+.         *- 重命名变量
+.         rename (Stkcd Stknme) (STKCD STKNM)
+{res}{txt}
+{com}. 
+.         *- 生成变量 - 观测年份 YEAR
+.         gen YEAR = real(substr(Accper,1,4))
+{txt}
+{com}. 
+.         *- 生成变量 - 是否由四大会计师事务所审计 AUDIT
+.         gen OPINION = 1 if Audittyp == "标准无保留意见"
+{txt}(3,552 missing values generated)
+
+{com}.         replace OPINION = 0 if Audittyp != "标准无保留意见"
+{txt}(3,552 real changes made)
+
+{com}.         
+.         *- 保留有效变量
+.         keep STKCD YEAR OPINION
+{txt}
+{com}. 
+.         *- 补充变量标签
+.         label var YEAR          "观测年份"
+{txt}
+{com}.         label var OPINION       "是否标准无保留意见"
+{txt}
+{com}. 
+.         *- 保存数据
+.         label data "财务报告审计意见相关变量1个"
+{txt}
+{com}.         save "DataB-Hub/Data14.dta", replace    
+{txt}file DataB-Hub/Data14.dta saved
+
+{com}. 
+. /* 本部分生成的 Data14 用于后续合并 */
+. /* OPINION */
+. 
+. // 结束时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:13:00
+{txt}
+{com}. ********************************************************************************
+.         
+.         
+.         
+. ********************************************************************************
+. // 开始时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:13:00
+{txt}
+{com}. 
+. *- 清洗股权性质相关数据
+. /* 包含变量：SOE */
+. 
+. import excel using "DataA-Original/EN_EquityNatureAll.xlsx", first clear
+{res}{text}(4 vars, 59,098 obs)
+
+{com}. labone, nrow(1 2) concat("_")
+{txt}
+{com}. drop in 1/2
+{txt}(2 observations deleted)
+
+{com}.         
+.         *- 仅保留年报数据
+.         keep if substr(EndDate,6,2) == "12"
+{txt}(0 observations deleted)
+
+{com}. 
+.         *- 重命名变量
+.         rename (Symbol ShortName) (STKCD STKNM)
+{res}{txt}
+{com}. 
+.         *- 生成变量 - 观测年份 YEAR
+.         gen YEAR = real(substr(EndDate,1,4))
+{txt}
+{com}. 
+.         *- 生成变量 - 是否为国企 SOE
+.         gen SOE = 1 if EquityNature == "国企"
+{txt}(36,522 missing values generated)
+
+{com}.         replace SOE = 0 if EquityNature != "国企"
+{txt}(36,522 real changes made)
+
+{com}.         
+.         *- 保留有效变量
+.         keep STKCD YEAR SOE
+{txt}
+{com}. 
+.         *- 补充变量标签
+.         label var YEAR          "观测年份"
+{txt}
+{com}.         label var SOE           "是否为国企"
+{txt}
+{com}. 
+.         *- 保存数据
+.         label data "股权性质相关变量1个"
+{txt}
+{com}.         save "DataB-Hub/Data15.dta", replace    
+{txt}file DataB-Hub/Data15.dta saved
+
+{com}. 
+. /* 本部分生成的 Data15 用于后续合并 */
+. /* SOE */
+. 
+. // 结束时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:13:02
+{txt}
+{com}. ********************************************************************************
+. 
+. 
+. 
+. 
+. 
+. ********************************************************************************
+. // 开始时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:13:02
+{txt}
+{com}. 
+. /* 至此完成了所有数据变量的计算，接下来需要将所有内容完全合并 */
+. /* 文件位置：DataB-Hub
+> Data1.dta:              STKCD STKNM YEAR INDCD INDNM PROVCD PROVNM CITYCD CITYNM MARKET STATE AGE
+> Data6.dta:              CFO GROWTH LEV MFEE OCCUPY ROA ROE SIZE TAT
+> Data10.dta:             BALANCE BOARD INDBOARD MHOLD TOP1 DUAL
+> Data11.dta:             BM TobinQ
+> Data12.dta:             INSTITUTION
+> Data13.dta:             AUDIT
+> Data14.dta:             OPINION
+> Data15.dta:             SOE
+> 总计：                       33 种变量，其中 AGE、BM、CFO、TobinQ 含有多类
+> */
+. 
+. *- 最终合并
+. // 2024/12/31 开始，取消 “仅保留合并上的结果，即取消 keep if _merge == 3”
+. use "DataB-Hub/Data1.dta", clear
+{txt}(基本信息相关变量11+年龄 - From Shutter Zor)
+
+{com}. merge 1:1 STKCD YEAR using "DataB-Hub/Data6.dta"
+{res}{txt}{p 0 7 2}
+(note: variable
+YEAR was 
+int, now float to accommodate using data's values)
+{p_end}
+
+{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}           4,376
+{txt}{col 9}from master{col 30}{res}               7{txt}  (_merge==1)
+{col 9}from using{col 30}{res}           4,369{txt}  (_merge==2)
+
+{col 5}matched{col 30}{res}          60,752{txt}  (_merge==3)
+{col 5}{hline 41}
+
+{com}. drop _merge
+{txt}
+{com}. merge 1:1 STKCD YEAR using "DataB-Hub/Data10.dta"
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}           3,633
+{txt}{col 9}from master{col 30}{res}           3,633{txt}  (_merge==1)
+{col 9}from using{col 30}{res}               0{txt}  (_merge==2)
+
+{col 5}matched{col 30}{res}          61,495{txt}  (_merge==3)
+{col 5}{hline 41}
+
+{com}. drop _merge
+{txt}
+{com}. merge 1:1 STKCD YEAR using "DataB-Hub/Data11.dta"
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}           5,440
+{txt}{col 9}from master{col 30}{res}           5,440{txt}  (_merge==1)
+{col 9}from using{col 30}{res}               0{txt}  (_merge==2)
+
+{col 5}matched{col 30}{res}          59,688{txt}  (_merge==3)
+{col 5}{hline 41}
+
+{com}. drop _merge
+{txt}
+{com}. merge 1:1 STKCD YEAR using "DataB-Hub/Data12.dta"
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}           4,693
+{txt}{col 9}from master{col 30}{res}           4,670{txt}  (_merge==1)
+{col 9}from using{col 30}{res}              23{txt}  (_merge==2)
+
+{col 5}matched{col 30}{res}          60,458{txt}  (_merge==3)
+{col 5}{hline 41}
+
+{com}. drop _merge
+{txt}
+{com}. merge 1:1 STKCD YEAR using "DataB-Hub/Data13.dta"
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}           4,674
+{txt}{col 9}from master{col 30}{res}           4,390{txt}  (_merge==1)
+{col 9}from using{col 30}{res}             284{txt}  (_merge==2)
+
+{col 5}matched{col 30}{res}          60,761{txt}  (_merge==3)
+{col 5}{hline 41}
+
+{com}. drop _merge
+{txt}
+{com}. merge 1:1 STKCD YEAR using "DataB-Hub/Data14.dta"
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}           3,936
+{txt}{col 9}from master{col 30}{res}           3,936{txt}  (_merge==1)
+{col 9}from using{col 30}{res}               0{txt}  (_merge==2)
+
+{col 5}matched{col 30}{res}          61,499{txt}  (_merge==3)
+{col 5}{hline 41}
+
+{com}. drop _merge
+{txt}
+{com}. merge 1:1 STKCD YEAR using "DataB-Hub/Data15.dta"
+{res}
+{txt}{col 5}Result{col 38}# of obs.
+{col 5}{hline 41}
+{col 5}not matched{col 30}{res}           6,339
+{txt}{col 9}from master{col 30}{res}           6,339{txt}  (_merge==1)
+{col 9}from using{col 30}{res}               0{txt}  (_merge==2)
+
+{col 5}matched{col 30}{res}          59,096{txt}  (_merge==3)
+{col 5}{hline 41}
+
+{com}. drop _merge
+{txt}
+{com}. 
+. *- 排序与保存数据
+. order STKCD STKNM YEAR INDCD INDNM PROVCD PROVNM CITYCD CITYNM MARKET STATE AGE1 AGE2 BALANCE BM1 BM2 BOARD CFO1 CFO2 GROWTH INDBOARD INSTITUTION1 INSTITUTION2 LEV MFEE MHOLD OCCUPY ROA ROE SIZE TAT TobinQ1 TobinQ2 TobinQ3 TobinQ4 TOP1 AUDIT DUAL OPINION SOE
+{txt}
+{com}.         
+. label data "Commonly used control variables (2001-2023) by Shutter Zor (Shutter_Z@outlook)." 
+{txt}
+{com}. save ControlVarsDetail.dta, replace     
+{txt}file ControlVarsDetail.dta saved
+
+{com}.         
+. // 结束时间记录：
+. dis "`c(current_date)' `c(current_time)'"
+{res}31 Dec 2024 12:13:02
+{txt}
+{com}. ********************************************************************************
+. log close _all
+      {txt}name:  {res}ShutterZorADXMU20241231
+       {txt}log:  {res}F:\Doctor\GitHub Repos\Commonly-Used-Control-Variables\CSMAR CtrlVars Cleaning Log.smcl
+  {txt}log type:  {res}smcl
+ {txt}closed on:  {res}31 Dec 2024, 12:13:02
+{txt}{.-}
+{smcl}
+{txt}{sf}{ul off}
